@@ -101,8 +101,14 @@ pub extern "system" fn Java_jp_sakaguchi_dancerecenter_GyroflowBridge_nativeInsp
 
 fn load_calibration(manager: &StabilizationManager) -> Result<(), String> {
     let lens = manager.lens.read();
-    let embedded = lens.fisheye_params.camera_matrix.len() == 3
-        && !lens.fisheye_params.distortion_coeffs.is_empty()
+    // Sony telemetry supplies a valid per-frame lens model whose static
+    // distortion_coeffs array is empty. Requiring coefficients rejected the
+    // real ZV-1 footage and incorrectly fell through to the preset database.
+    let sony_embedded = manager.gyro.read().file_metadata.read()
+        .lens_profile.as_ref().is_some_and(|profile| profile.is_object());
+    let embedded = sony_embedded && lens.fisheye_params.camera_matrix.len() == 3
+        && lens.fisheye_params.camera_matrix[0].first().is_some_and(|f| *f > 0.0)
+        && lens.fisheye_params.camera_matrix[1].get(1).is_some_and(|f| *f > 0.0)
         && lens.calib_dimension.w > 0 && lens.calib_dimension.h > 0;
     drop(lens);
     if embedded {
