@@ -27,6 +27,7 @@ public final class MainActivity extends Activity {
     private ImageView before, after;
     private Button prepare, render;
     private ParcelFileDescriptor source;
+    private Uri sourceUri;
     private int sourceW, sourceH, fpsX1000 = 30000;
     private long durationMs;
     private volatile boolean prepared;
@@ -73,6 +74,7 @@ public final class MainActivity extends Activity {
         try {
             if (source != null) source.close();
             Uri uri = data.getData();
+            sourceUri = uri;
             source = getContentResolver().openFileDescriptor(uri, "r");
             if (source == null) throw new IOException("動画を開けません");
             try (MediaMetadataRetriever mmr = new MediaMetadataRetriever()) {
@@ -112,11 +114,11 @@ public final class MainActivity extends Activity {
         new Thread(() -> {
             String result;
             Bitmap first = null, last = null;
-            try (MediaMetadataRetriever mmr = new MediaMetadataRetriever()) {
-                mmr.setDataSource(source.getFileDescriptor());
+            try {
                 long stampUs = Math.min(durationMs * 500, Math.max(0, durationMs * 1000 - 100000));
-                Bitmap frame = mmr.getFrameAtTime(stampUs, MediaMetadataRetriever.OPTION_CLOSEST);
-                if (frame == null) throw new IOException("中央フレームを取得できません");
+                FrameExtractor.Frame decoded = FrameExtractor.at(getContentResolver(), sourceUri, stampUs);
+                Bitmap frame = decoded.bitmap;
+                stampUs = decoded.timestampUs;
                 int previewH = Math.max(1, Math.round(PREVIEW_WIDTH * (float) frame.getHeight() / frame.getWidth()));
                 first = Bitmap.createScaledBitmap(frame, PREVIEW_WIDTH, previewH, true);
                 int[] pixels = new int[PREVIEW_WIDTH * previewH];
