@@ -36,6 +36,7 @@ jobs:
         run: |
           mkdir -p original/third_party
           git clone --depth 1 --branch v1.6.3 https://github.com/gyroflow/gyroflow.git original/third_party/gyroflow-core
+          mkdir -p original/third_party/gyroflow-core/resources/camera_presets
           curl --fail --location --retry 3 \
             'https://github.com/gyroflow/lens_profiles/releases/latest/download/profiles.cbor.gz' \
             --output original/third_party/gyroflow-core/resources/camera_presets/profiles.cbor.gz
