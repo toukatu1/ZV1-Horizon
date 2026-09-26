@@ -40,7 +40,7 @@ public final class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(18, 12, 18, 12);
         TextView info = new TextView(this);
-        info.setText("ZV-1 4K原本を選び、①解析、②1フレーム補正を試します。動画保存はしません。");
+        info.setText("ZV-1 4K原本を選び、①解析、②1フレーム補正を試します。レンズ未登録なら仮の画角で動作だけ検証します。動画保存はしません。");
         root.addView(info);
         Button pick = new Button(this); pick.setText("ZV-1の4K動画を選ぶ"); root.addView(pick);
         prepare = new Button(this); prepare.setText("① ジャイロ解析＋補正計算");
