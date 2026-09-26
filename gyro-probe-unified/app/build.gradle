@@ -4,7 +4,7 @@ android {
     namespace 'jp.sakaguchi.zv1gyroprobe'
     compileSdk 35
     defaultConfig {
-        applicationId 'jp.sakaguchi.zv1gyroprobe'
+        applicationId 'jp.sakaguchi.zv1gyroframeproof'
         minSdk 29
         targetSdk 28
         versionCode 1
