@@ -32,10 +32,11 @@ jobs:
           sdkmanager --install 'ndk;23.2.8568313' 'platforms;android-35'
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/23.2.8568313" >> "$GITHUB_ENV"
           cargo install cargo-ndk --locked
-      - name: Fetch official Gyroflow Core 1.6.3 and bundled lens profiles
+      - name: Fetch official Gyroflow Core and bundled lens profiles
         run: |
           mkdir -p original/third_party
-          git clone --depth 1 --branch v1.6.3 https://github.com/gyroflow/gyroflow.git original/third_party/gyroflow-core
+          git clone --depth 1 --branch master https://github.com/gyroflow/gyroflow.git original/third_party/gyroflow-core
+          git -C original/third_party/gyroflow-core rev-parse HEAD
           mkdir -p original/third_party/gyroflow-core/resources/camera_presets
           curl --fail --location --retry 3 \
             'https://github.com/gyroflow/lens_profiles/releases/latest/download/profiles.cbor.gz' \
