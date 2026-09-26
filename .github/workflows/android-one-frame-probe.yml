@@ -43,8 +43,7 @@ jobs:
           test -s original/third_party/gyroflow-core/resources/camera_presets/profiles.cbor.gz
       - name: Compile the one-frame Gyroflow Core bridge
         run: |
-          cargo ndk -t arm64-v8a -o gyro-probe-unified/app/src/main/jniLibs build --release \
-            --manifest-path gyro-probe-unified/Cargo.toml
+          (cd gyro-probe-unified && cargo ndk -t arm64-v8a -o app/src/main/jniLibs build --release)
           python3 gyro-probe-unified/verify_gyro_probe.py \
             gyro-probe-unified/app/src/main/jniLibs/arm64-v8a/libdance_gyroflow_jni.so
       - name: Build isolated Android diagnostic
