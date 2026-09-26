@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:allowBackup="false" android:label="ZV-1 1フレーム診断"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name="jp.sakaguchi.zv1gyroprobe.MainActivity"
+            android:exported="true" android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
