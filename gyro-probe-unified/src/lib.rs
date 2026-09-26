@@ -99,7 +99,7 @@ pub extern "system" fn Java_jp_sakaguchi_dancerecenter_GyroflowBridge_nativeInsp
     reply(env, value)
 }
 
-fn load_calibration(manager: &StabilizationManager) -> Result<(), String> {
+fn load_calibration(manager: &StabilizationManager, width: jint, height: jint) -> Result<&'static str, String> {
     let lens = manager.lens.read();
     // Sony telemetry supplies a valid per-frame lens model whose static
     // distortion_coeffs array is empty. Requiring coefficients rejected the
@@ -112,19 +112,36 @@ fn load_calibration(manager: &StabilizationManager) -> Result<(), String> {
         && lens.calib_dimension.w > 0 && lens.calib_dimension.h > 0;
     drop(lens);
     if embedded {
-        return Ok(()); // Some Sony files embed their own lens metadata.
+        return Ok("Sony embedded"); // Some Sony files embed their own lens metadata.
     }
     let id = manager.camera_id.read().as_ref()
         .map(|v| v.get_identifier_for_autoload()).unwrap_or_default();
-    if id.is_empty() { return Err("ZV-1のレンズ識別情報がありません".into()); }
-    {
+    if !id.is_empty() {
         let mut db = manager.lens_profile_db.write();
         if !db.loaded { db.load_all(); }
-        if !db.contains_id(&id) {
-            return Err(format!("レンズプロファイルが見つかりません: {id}"));
+        if db.contains_id(&id) {
+            drop(db);
+            manager.load_lens_profile(&id).map_err(|e| format!("レンズ読込: {e}"))?;
+            return Ok("matched preset");
         }
     }
-    manager.load_lens_profile(&id).map_err(|e| format!("レンズ読込: {e}"))
+    // The ZV-1 can record gyro telemetry with no matching lens preset. For
+    // this one-frame *execution proof* only, use a labelled pinhole camera.
+    // Prefer a focal length recorded in Sony's per-frame metadata; otherwise
+    // use an explicit approximation. Do not treat this as a calibrated export.
+    let w = width.max(1) as usize;
+    let h = height.max(1) as usize;
+    let focal = manager.gyro.read().file_metadata.read().lens_params.values()
+        .filter_map(|p| p.pixel_focal_length)
+        .find(|(fx, fy)| fx.is_finite() && fy.is_finite() && *fx > 0.0 && *fy > 0.0);
+    let (fx, fy, description) = match focal {
+        Some((fx, fy)) => (fx as f64, fy as f64, "Sony focal / approximate lens"),
+        None => (w as f64 * 0.8, w as f64 * 0.8, "approximate lens (uncalibrated)"),
+    };
+    let profile = format!(r#"{{"calibrated_by":"Diagnostic only","camera_brand":"Sony","camera_model":"ZV-1","calib_dimension":{{"w":{w},"h":{h}}},"orig_dimension":{{"w":{w},"h":{h}}},"output_dimension":{{"w":{w},"h":{h}}},"input_horizontal_stretch":1.0,"input_vertical_stretch":1.0,"fisheye_params":{{"camera_matrix":[[{fx},0,{cx}],[0,{fy},{cy}],[0,0,1]],"distortion_coeffs":[]}},"calibrator_version":"diagnostic"}}"#,
+                          cx = w as f64 / 2.0, cy = h as f64 / 2.0);
+    manager.load_lens_profile(&profile).map_err(|e| format!("仮レンズ設定: {e}"))?;
+    Ok(description)
 }
 
 #[unsafe(no_mangle)]
@@ -135,12 +152,12 @@ pub extern "system" fn Java_jp_sakaguchi_dancerecenter_GyroflowBridge_nativePrep
         let (manager, _) = manager_from_fd(fd, duration_ms, width, height, fps_x1000)?;
         let samples = manager.gyro.read().quaternions.len();
         if samples == 0 { return Err("ジャイロサンプルがありません".into()); }
-        load_calibration(&manager)?;
+        let lens_source = load_calibration(&manager, width, height)?;
         manager.set_stab_enabled(true);
         manager.set_output_size(width as usize, height as usize);
         manager.recompute_blocking();
         *prepared().lock().map_err(|_| "補正状態のロックに失敗".to_string())? = Some(manager);
-        Ok(format!("samples={samples};lens=OK;path=GyroflowCore"))
+        Ok(format!("samples={samples};lens={lens_source};path=GyroflowCore"))
     });
     reply(env, match result { Ok(s) => format!("OK|{s}"), Err(e) => format!("ERR|{e}") })
 }
