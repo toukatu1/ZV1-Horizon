@@ -31,7 +31,7 @@ fn safe<T>(f: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_jp_sakaguchi_dancerecenter_GyroflowBridge_nativeInit(
-    env: EnvUnowned, _class: JClass, context: JObject) {
+    mut env: EnvUnowned, _class: JClass, context: JObject) {
     env.with_env(|env| {
         let vm = env.get_java_vm()?;
         let global_context = env.new_global_ref(context)?;
@@ -200,7 +200,7 @@ fn transform_preview(input: &mut [u8], output: &mut [u8],
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_jp_sakaguchi_dancerecenter_GyroflowBridge_nativeStabilizeFrame(
-    env: EnvUnowned, _class: JClass, _fd: jint, _duration_ms: jlong,
+    mut env: EnvUnowned, _class: JClass, _fd: jint, _duration_ms: jlong,
     source_w: jint, source_h: jint, fps_x1000: jint, timestamp_us: jlong,
     input: JByteArray, output: JByteArray) -> jstring {
     env.with_env(|env| {
