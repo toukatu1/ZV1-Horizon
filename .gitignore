@@ -1,0 +1,10 @@
+**/target/
+artifacts/
+signing/
+*.pk8
+*.jks
+*.keystore
+*.apk
+*.mp4
+*.MP4
+__pycache__/

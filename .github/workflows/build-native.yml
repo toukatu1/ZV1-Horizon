@@ -1,0 +1,47 @@
+name: Build ZV1 v15 native library
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, codex/zv1-v15-native]
+    paths:
+      - 'native-build/**'
+      - 'ci/**'
+      - '.github/workflows/build-native.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zv1-native-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      NDK_VERSION: 27.3.13750724
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: '1'
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: '2'
+      CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android NDK
+        run: sdkmanager "ndk;$NDK_VERSION"
+      - name: Install Rust Android target
+        run: rustup toolchain install stable --profile minimal --target aarch64-linux-android
+      - name: Build and verify native library
+        run: bash ci/build-native.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zv1-v15-native-arm64
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
