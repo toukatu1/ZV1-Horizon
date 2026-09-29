@@ -1,0 +1,15 @@
+[package]
+name = "dance-gyroflow-probe"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+
+[lib]
+name = "dance_gyroflow_jni"
+crate-type = ["cdylib"]
+
+[dependencies]
+gyroflow-core = { path = "../original/third_party/gyroflow-core/src/core" }
+jni = "0.22"
+libc = "0.2"
+ndk-context = "0.1.1"
